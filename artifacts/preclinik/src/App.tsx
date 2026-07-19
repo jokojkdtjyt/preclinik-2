@@ -208,13 +208,31 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
 // ─── Wire Clerk session token into every API fetch ───────────────────────────
 // Without this, POST/DELETE mutations silently get 401s even when the user is
 // signed in, because customFetch doesn't attach the Bearer token by default.
+//
+// Implementation note: we keep a ref to the latest getToken and register the
+// getter only once (on mount). Clerk internally rotates the getToken function
+// reference on every token refresh, which would cause the effect to re-run,
+// briefly setting the auth getter to null between cleanup and the next effect —
+// a race window that drops the auth header from any in-flight request and
+// produces a flood of 401s. Using a ref avoids that null gap entirely.
 
 function ClerkTokenSync() {
   const { getToken } = useAuth();
+  const getTokenRef = useRef(getToken);
+
+  // Keep ref current on every render so the registered getter always calls
+  // the freshest version without ever un-registering between re-renders.
   useEffect(() => {
-    setAuthTokenGetter(() => getToken());
-    return () => setAuthTokenGetter(null);
-  }, [getToken]);
+    getTokenRef.current = getToken;
+  });
+
+  useEffect(() => {
+    // Register once on mount; the ref handles rotations automatically.
+    setAuthTokenGetter(() => getTokenRef.current());
+    // No null-setter on unmount: ClerkTokenSync lives for the app's lifetime
+    // and setting null would create the same transient-null race we're fixing.
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   return null;
 }
 
@@ -228,10 +246,16 @@ function ClerkQueryClientCacheInvalidator() {
   useEffect(() => {
     const unsubscribe = addListener(({ user }) => {
       const userId = user?.id ?? null;
-      if (
-        prevUserIdRef.current !== undefined &&
-        prevUserIdRef.current !== userId
-      ) {
+      const prev = prevUserIdRef.current;
+
+      // Only clear when switching between two *different* signed-in users
+      // (e.g. sign out as user A, sign in as user B in the same tab).
+      // We intentionally skip transitions that involve null on either side:
+      //   - prev=null  → userId=X  : normal sign-in, no stale data to clear
+      //   - prev=X     → userId=null: Clerk briefly emits null during token
+      //                               refresh; clearing here wipes the auth
+      //                               getter and floods requests with 401s
+      if (prev !== undefined && prev !== null && userId !== null && prev !== userId) {
         queryClient.clear();
       }
       prevUserIdRef.current = userId;
