@@ -1,44 +1,56 @@
 # PreClinik
 
-An e-learning platform for Algerian medical students. Provides video lessons, five-option Q-banks, and progress tracking built around the Algerian medical curriculum.
+A learning platform with a React frontend, Express API backend, and Clerk authentication.
+
+## Project Structure
+
+This is a **pnpm monorepo** with the following artifacts:
+
+| Artifact | Path | Purpose |
+|---|---|---|
+| PreClinik (web) | `artifacts/preclinik/` | React + Vite frontend |
+| API Server | `artifacts/api-server/` | Express.js REST API |
+| Mockup Sandbox | `artifacts/mockup-sandbox/` | Design/component preview tool |
+
+### Shared Libraries (`lib/`)
+
+- **`lib/api-spec/`** — OpenAPI YAML spec + Orval config for code generation
+- **`lib/api-zod/`** — Zod schemas shared between frontend and backend
+- **`lib/api-client-react/`** — Generated TanStack Query hooks for the frontend
+- **`lib/db/`** — Drizzle ORM schema and database client
 
 ## Stack
 
-- **Frontend** (`artifacts/preclinik`): React 19 + Vite + Tailwind CSS v4 + shadcn/ui + Wouter routing + TanStack Query
-- **API Server** (`artifacts/api-server`): Express + Pino logging + Clerk auth middleware
-- **Auth**: Replit-managed Clerk (provisioned automatically)
-- **Database**: Replit PostgreSQL via Drizzle ORM (`lib/db`)
-- **Video CDN**: Bunny.net (`BUNNY_API_KEY`)
-- **Shared libs**: `lib/api-spec` (OpenAPI), `lib/api-client-react` (generated client), `lib/api-zod` (Zod schemas)
+- **Frontend**: React 19, Vite, Tailwind CSS v4, shadcn/ui (Radix), TanStack Query, Wouter, Framer Motion
+- **Backend**: Express 5, Drizzle ORM, Pino logging
+- **Auth**: Clerk (frontend `@clerk/react`, backend `@clerk/express`)
+- **Database**: PostgreSQL via Drizzle ORM
 
-## Running
+## Running Locally
 
-Workflows are pre-configured and start automatically:
+### Prerequisites
 
-| Workflow | Command |
-|---|---|
-| Frontend | `pnpm --filter @workspace/preclinik run dev` |
-| API Server | `pnpm --filter @workspace/api-server run dev` |
+Before running, you'll need:
 
-## Environment Variables / Secrets
+1. **Clerk keys** — `CLERK_PUBLISHABLE_KEY` and `CLERK_SECRET_KEY` from your Clerk dashboard
+2. **Database** — a `DATABASE_URL` (PostgreSQL connection string)
 
-| Key | Notes |
-|---|---|
-| `CLERK_SECRET_KEY` | Auto-provisioned by Replit Clerk |
-| `CLERK_PUBLISHABLE_KEY` | Auto-provisioned by Replit Clerk |
-| `VITE_CLERK_PUBLISHABLE_KEY` | Auto-provisioned by Replit Clerk |
-| `DATABASE_URL` | Auto-provisioned by Replit PostgreSQL |
-| `BUNNY_API_KEY` | Your Bunny.net API key — needed for video upload/playback |
-| `SESSION_SECRET` | Session signing secret |
-
-## Database
-
-Schema is managed via Drizzle ORM. To push schema changes to the dev database:
+### Commands
 
 ```bash
-pnpm --filter @workspace/db run push
+# Install dependencies
+pnpm install
+
+# Run the frontend (dev server on PORT env var)
+pnpm --filter @workspace/preclinik run dev
+
+# Run the API server (dev server on PORT env var)
+pnpm --filter @workspace/api-server run dev
+
+# Typecheck the whole workspace
+pnpm run typecheck
 ```
 
 ## User Preferences
 
-- Keep existing project structure and stack — do not restructure or migrate
+<!-- Record any preferences the user asks you to remember here -->
