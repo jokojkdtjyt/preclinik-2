@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 60" fill="none">
+  <!-- Heart / cross icon -->
+  <rect x="0" y="8" width="44" height="44" rx="12" fill="#8b1a2f"/>
+  <!-- Cross bar horizontal -->
+  <rect x="10" y="27" width="24" height="6" rx="3" fill="white"/>
+  <!-- Cross bar vertical -->
+  <rect x="19" y="18" width="6" height="24" rx="3" fill="white"/>
+
+  <!-- Wordmark -->
+  <text x="54" y="38" font-family="Manrope, Inter, sans-serif" font-weight="800" font-size="22" fill="#8b1a2f" letter-spacing="-0.5">Pre</text>
+  <text x="90" y="38" font-family="Manrope, Inter, sans-serif" font-weight="800" font-size="22" fill="#b9852e" letter-spacing="-0.5">Clinik</text>
+</svg>

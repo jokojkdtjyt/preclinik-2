@@ -1,0 +1,838 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: PreClinik API — e-learning platform for Algerian medical students
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: modules
+    description: Course module operations
+  - name: lessons
+    description: Lesson operations within a module
+  - name: questions
+    description: Q-bank question operations within a lesson
+  - name: progress
+    description: Student progress tracking
+  - name: cart
+    description: Cart and checkout
+  - name: admin
+    description: Admin operations
+
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  /modules:
+    get:
+      operationId: listModules
+      tags: [modules]
+      summary: List all modules
+      parameters:
+        - in: query
+          name: published
+          schema:
+            type: boolean
+          required: false
+        - in: query
+          name: search
+          schema:
+            type: string
+          required: false
+      responses:
+        "200":
+          description: List of modules
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Module"
+    post:
+      operationId: createModule
+      tags: [modules]
+      summary: Create a new module (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ModuleInput"
+      responses:
+        "201":
+          description: Created module
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Module"
+
+  /modules/{moduleId}:
+    get:
+      operationId: getModule
+      tags: [modules]
+      summary: Get a module by ID
+      parameters:
+        - $ref: "#/components/parameters/moduleId"
+      responses:
+        "200":
+          description: Module detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Module"
+        "404":
+          description: Not found
+    patch:
+      operationId: updateModule
+      tags: [modules]
+      summary: Update a module (admin)
+      parameters:
+        - $ref: "#/components/parameters/moduleId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ModuleUpdate"
+      responses:
+        "200":
+          description: Updated module
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Module"
+        "404":
+          description: Not found
+    delete:
+      operationId: deleteModule
+      tags: [modules]
+      summary: Delete a module (admin)
+      parameters:
+        - $ref: "#/components/parameters/moduleId"
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+
+  /modules/{moduleId}/lessons:
+    get:
+      operationId: listLessons
+      tags: [lessons]
+      summary: List lessons for a module
+      parameters:
+        - $ref: "#/components/parameters/moduleId"
+      responses:
+        "200":
+          description: List of lessons
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Lesson"
+    post:
+      operationId: createLesson
+      tags: [lessons]
+      summary: Create a lesson in a module (admin)
+      parameters:
+        - $ref: "#/components/parameters/moduleId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LessonInput"
+      responses:
+        "201":
+          description: Created lesson
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Lesson"
+
+  /modules/{moduleId}/lessons/{lessonId}:
+    get:
+      operationId: getLesson
+      tags: [lessons]
+      summary: Get a lesson by ID
+      parameters:
+        - $ref: "#/components/parameters/moduleId"
+        - $ref: "#/components/parameters/lessonId"
+      responses:
+        "200":
+          description: Lesson detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Lesson"
+        "404":
+          description: Not found
+    patch:
+      operationId: updateLesson
+      tags: [lessons]
+      summary: Update a lesson (admin)
+      parameters:
+        - $ref: "#/components/parameters/moduleId"
+        - $ref: "#/components/parameters/lessonId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LessonUpdate"
+      responses:
+        "200":
+          description: Updated lesson
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Lesson"
+        "404":
+          description: Not found
+    delete:
+      operationId: deleteLesson
+      tags: [lessons]
+      summary: Delete a lesson (admin)
+      parameters:
+        - $ref: "#/components/parameters/moduleId"
+        - $ref: "#/components/parameters/lessonId"
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+
+  /modules/{moduleId}/lessons/{lessonId}/questions:
+    get:
+      operationId: listQuestions
+      tags: [questions]
+      summary: List Q-bank questions for a lesson
+      parameters:
+        - $ref: "#/components/parameters/moduleId"
+        - $ref: "#/components/parameters/lessonId"
+      responses:
+        "200":
+          description: List of questions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Question"
+    post:
+      operationId: createQuestion
+      tags: [questions]
+      summary: Create a Q-bank question (admin)
+      parameters:
+        - $ref: "#/components/parameters/moduleId"
+        - $ref: "#/components/parameters/lessonId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/QuestionInput"
+      responses:
+        "201":
+          description: Created question
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Question"
+
+  /modules/{moduleId}/lessons/{lessonId}/questions/{questionId}:
+    patch:
+      operationId: updateQuestion
+      tags: [questions]
+      summary: Update a Q-bank question (admin)
+      parameters:
+        - $ref: "#/components/parameters/moduleId"
+        - $ref: "#/components/parameters/lessonId"
+        - $ref: "#/components/parameters/questionId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/QuestionUpdate"
+      responses:
+        "200":
+          description: Updated question
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Question"
+        "404":
+          description: Not found
+    delete:
+      operationId: deleteQuestion
+      tags: [questions]
+      summary: Delete a Q-bank question (admin)
+      parameters:
+        - $ref: "#/components/parameters/moduleId"
+        - $ref: "#/components/parameters/lessonId"
+        - $ref: "#/components/parameters/questionId"
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+
+  /progress:
+    get:
+      operationId: getProgress
+      tags: [progress]
+      summary: Get all lesson progress
+      responses:
+        "200":
+          description: Progress map
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProgressMap"
+
+  /progress/{lessonId}:
+    put:
+      operationId: markProgress
+      tags: [progress]
+      summary: Mark a lesson as complete or incomplete
+      parameters:
+        - $ref: "#/components/parameters/lessonId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProgressUpdate"
+      responses:
+        "200":
+          description: Updated progress
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProgressMap"
+
+  /cart:
+    get:
+      operationId: getCart
+      tags: [cart]
+      summary: Get current cart items
+      responses:
+        "200":
+          description: Cart with items and total
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Cart"
+
+  /cart/{moduleId}:
+    post:
+      operationId: addToCart
+      tags: [cart]
+      summary: Add a module to cart
+      parameters:
+        - $ref: "#/components/parameters/moduleId"
+      responses:
+        "200":
+          description: Updated cart
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Cart"
+    delete:
+      operationId: removeFromCart
+      tags: [cart]
+      summary: Remove a module from cart
+      parameters:
+        - $ref: "#/components/parameters/moduleId"
+      responses:
+        "200":
+          description: Updated cart
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Cart"
+
+  /checkout:
+    post:
+      operationId: checkout
+      tags: [cart]
+      summary: Checkout — moves cart items to purchased
+      responses:
+        "200":
+          description: Checkout complete with purchased module IDs
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CheckoutResult"
+
+  /purchased:
+    get:
+      operationId: listPurchased
+      tags: [cart]
+      summary: List purchased module IDs
+      responses:
+        "200":
+          description: List of purchased module IDs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+
+  /admin/stats:
+    get:
+      operationId: getAdminStats
+      tags: [admin]
+      summary: Get admin overview statistics
+      responses:
+        "200":
+          description: Admin stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminStats"
+
+  /admin/students:
+    get:
+      operationId: listAdminStudents
+      tags: [admin]
+      summary: List all students (admin)
+      responses:
+        "200":
+          description: List of students
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdminStudent"
+
+components:
+  parameters:
+    moduleId:
+      name: moduleId
+      in: path
+      required: true
+      schema:
+        type: string
+    lessonId:
+      name: lessonId
+      in: path
+      required: true
+      schema:
+        type: string
+    questionId:
+      name: questionId
+      in: path
+      required: true
+      schema:
+        type: integer
+
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+
+    Module:
+      type: object
+      required:
+        - id
+        - title
+        - category
+        - level
+        - provider
+        - rating
+        - students
+        - price
+        - duration
+        - published
+        - icon
+        - gradient
+        - year
+        - summary
+        - outcomes
+        - lessonCount
+        - liveLessonCount
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        category:
+          type: string
+        level:
+          type: string
+        provider:
+          type: string
+        rating:
+          type: number
+        students:
+          type: integer
+        price:
+          type: integer
+        duration:
+          type: string
+        published:
+          type: boolean
+        icon:
+          type: string
+        gradient:
+          type: string
+        year:
+          type: string
+        summary:
+          type: string
+        outcomes:
+          type: array
+          items:
+            type: string
+        lessonCount:
+          type: integer
+        liveLessonCount:
+          type: integer
+
+    ModuleInput:
+      type: object
+      required:
+        - id
+        - title
+        - category
+        - level
+        - provider
+        - duration
+        - icon
+        - year
+        - summary
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        category:
+          type: string
+        level:
+          type: string
+        provider:
+          type: string
+        rating:
+          type: number
+        students:
+          type: integer
+        price:
+          type: integer
+        duration:
+          type: string
+        published:
+          type: boolean
+        icon:
+          type: string
+        gradient:
+          type: ["string", "null"]
+        year:
+          type: string
+        summary:
+          type: string
+        outcomes:
+          type: array
+          items:
+            type: string
+
+    ModuleUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+        category:
+          type: string
+        level:
+          type: string
+        provider:
+          type: string
+        rating:
+          type: number
+        students:
+          type: integer
+        price:
+          type: integer
+        duration:
+          type: string
+        published:
+          type: boolean
+        icon:
+          type: string
+        gradient:
+          type: ["string", "null"]
+        year:
+          type: string
+        summary:
+          type: string
+        outcomes:
+          type: array
+          items:
+            type: string
+
+    Lesson:
+      type: object
+      required:
+        - id
+        - moduleId
+        - title
+        - duration
+        - type
+        - published
+        - sortOrder
+      properties:
+        id:
+          type: string
+        moduleId:
+          type: string
+        title:
+          type: string
+        duration:
+          type: string
+        type:
+          type: string
+          enum: [Video, Reading, Quiz]
+        published:
+          type: boolean
+        summary:
+          type: ["string", "null"]
+        videoTitle:
+          type: ["string", "null"]
+        videoUrl:
+          type: ["string", "null"]
+        sortOrder:
+          type: integer
+        bunnyVideoId:
+          type: ["string", "null"]
+          description: Bunny Stream video ID for this lesson
+        questionCount:
+          type: integer
+
+    LessonInput:
+      type: object
+      required:
+        - id
+        - title
+        - duration
+        - type
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        duration:
+          type: string
+        type:
+          type: string
+          enum: [Video, Reading, Quiz]
+        published:
+          type: boolean
+        summary:
+          type: ["string", "null"]
+        videoTitle:
+          type: ["string", "null"]
+        videoUrl:
+          type: ["string", "null"]
+        sortOrder:
+          type: integer
+
+    LessonUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+        duration:
+          type: string
+        type:
+          type: string
+          enum: [Video, Reading, Quiz]
+        published:
+          type: boolean
+        summary:
+          type: ["string", "null"]
+        videoTitle:
+          type: ["string", "null"]
+        videoUrl:
+          type: ["string", "null"]
+        sortOrder:
+          type: integer
+
+    Question:
+      type: object
+      required:
+        - id
+        - lessonId
+        - question
+        - options
+        - correct
+        - comment
+      properties:
+        id:
+          type: integer
+        lessonId:
+          type: string
+        question:
+          type: string
+        options:
+          type: array
+          items:
+            type: string
+          minItems: 5
+          maxItems: 5
+        correct:
+          type: integer
+        comment:
+          type: string
+
+    QuestionInput:
+      type: object
+      required:
+        - question
+        - options
+        - correct
+        - comment
+      properties:
+        question:
+          type: string
+        options:
+          type: array
+          items:
+            type: string
+          minItems: 5
+          maxItems: 5
+        correct:
+          type: integer
+        comment:
+          type: string
+
+    QuestionUpdate:
+      type: object
+      properties:
+        question:
+          type: string
+        options:
+          type: array
+          items:
+            type: string
+          minItems: 5
+          maxItems: 5
+        correct:
+          type: integer
+        comment:
+          type: string
+
+    ProgressMap:
+      type: object
+      description: Map of lessonId to completion boolean
+      additionalProperties:
+        type: boolean
+
+    ProgressUpdate:
+      type: object
+      required:
+        - completed
+      properties:
+        completed:
+          type: boolean
+
+    Cart:
+      type: object
+      required:
+        - items
+        - total
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/CartItem"
+        total:
+          type: integer
+
+    CartItem:
+      type: object
+      required:
+        - moduleId
+        - title
+        - price
+        - category
+        - duration
+      properties:
+        moduleId:
+          type: string
+        title:
+          type: string
+        price:
+          type: integer
+        category:
+          type: string
+        duration:
+          type: string
+
+    CheckoutResult:
+      type: object
+      required:
+        - purchased
+      properties:
+        purchased:
+          type: array
+          items:
+            type: string
+
+    AdminStats:
+      type: object
+      required:
+        - totalModules
+        - liveModules
+        - totalLessons
+        - liveLessons
+        - totalStudents
+      properties:
+        totalModules:
+          type: integer
+        liveModules:
+          type: integer
+        totalLessons:
+          type: integer
+        liveLessons:
+          type: integer
+        totalStudents:
+          type: integer
+
+    AdminStudent:
+      type: object
+      required:
+        - id
+        - name
+        - email
+        - progressPercent
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+        progressPercent:
+          type: integer

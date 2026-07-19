@@ -1,0 +1,27 @@
+kind = "web"
+previewPath = "/"
+title = "PreClinik"
+version = "1.0.0"
+id = "artifacts/preclinik"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 23148
+
+[services.development]
+run = "pnpm --filter @workspace/preclinik run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/preclinik", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/preclinik/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "23148"
+BASE_PATH = "/"
