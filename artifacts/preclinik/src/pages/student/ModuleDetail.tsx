@@ -95,6 +95,7 @@ export default function ModuleDetail() {
                   sessionId={pendingSession!.sessionId}
                   lastRemindedAt={pendingSession!.lastRemindedAt}
                   createdAt={pendingSession!.createdAt}
+                  variant="full"
                 />
               </div>
             ) : (
