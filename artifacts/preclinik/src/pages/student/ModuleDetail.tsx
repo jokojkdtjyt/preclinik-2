@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useParams, Link } from 'wouter';
 import { useGetModule, useListLessons, useListPurchased, useAddToCart, useGetCart, getGetCartQueryKey } from '@workspace/api-client-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { PlayCircle, CheckCircle, Lock, BookOpen, Clock, Users, Star, ShoppingCart, Check } from 'lucide-react';
+import { usePendingModules } from '@/hooks/usePendingModules';
+import { NotifyAgain } from '@/components/modules/NotifyAgain';
 
 export default function ModuleDetail() {
   const { id } = useParams<{ id: string }>();
@@ -14,9 +16,17 @@ export default function ModuleDetail() {
   const { data: lessons } = useListLessons(id, { query: { enabled: !!id } });
   const { data: purchasedList } = useListPurchased();
   const { data: cart } = useGetCart();
+  const { data: pendingSessions } = usePendingModules();
   const addToCart = useAddToCart();
 
   const inCart = cart?.items.some(i => i.moduleId === id) ?? false;
+  const isPurchased = purchasedList?.includes(id);
+  // useMemo must stay before any early return (Rules of Hooks)
+  const pendingSession = useMemo(
+    () => pendingSessions?.find(s => s.moduleIds.includes(id ?? '')) ?? null,
+    [pendingSessions, id],
+  );
+  const isPending = !isPurchased && pendingSession !== null;
 
   const handleAddToCart = () => {
     addToCart.mutate(
@@ -34,8 +44,6 @@ export default function ModuleDetail() {
   if (moduleLoading || !module) {
     return <div className="animate-pulse h-[60vh] bg-white rounded-[22px] border border-border"></div>;
   }
-
-  const isPurchased = purchasedList?.includes(module.id);
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500 pb-16">
@@ -68,32 +76,56 @@ export default function ModuleDetail() {
           </div>
         </div>
 
+        {/* Enroll panel — hidden once purchased */}
         {!isPurchased && (
           <div className="bg-white p-8 md:w-80 flex flex-col justify-center shrink-0 border-l border-border relative z-10">
-            <div className="text-center mb-6">
-              <div className="text-xs text-muted-foreground font-mono font-bold uppercase tracking-widest mb-2">Enroll Now</div>
-              <div className="text-4xl font-serif font-bold text-foreground">{module.price} DZD</div>
-            </div>
-            <button
-              onClick={handleAddToCart}
-              disabled={addToCart.isPending || inCart}
-              className={`w-full font-bold py-4 rounded-xl transition-all shadow-lg mb-4 flex items-center justify-center gap-2 disabled:opacity-75 ${
-                inCart
-                  ? 'bg-green-600 text-white shadow-green-600/20 cursor-default'
-                  : 'bg-primary hover:bg-primary/90 text-white shadow-primary/20'
-              }`}
-            >
-              {inCart ? (
-                <><Check className="w-5 h-5" /> In Cart</>
-              ) : addToCart.isPending ? (
-                'Adding…'
-              ) : (
-                <><ShoppingCart className="w-5 h-5" /> Add to Cart</>
-              )}
-            </button>
-            <p className="text-xs text-muted-foreground text-center font-mono">
-              Full lifetime access. 14-day money-back guarantee.
-            </p>
+            {isPending ? (
+              /* ── Pending state ── */
+              <div className="flex flex-col items-center text-center gap-4">
+                <div className="text-3xl">⏳</div>
+                <div>
+                  <div className="text-sm font-bold text-amber-700 font-mono uppercase tracking-widest mb-1">
+                    Pending Review
+                  </div>
+                  <p className="text-xs text-muted-foreground font-mono leading-relaxed">
+                    Your payment receipt has been submitted. The admin will approve your access shortly.
+                  </p>
+                </div>
+                <NotifyAgain
+                  sessionId={pendingSession!.sessionId}
+                  lastRemindedAt={pendingSession!.lastRemindedAt}
+                  createdAt={pendingSession!.createdAt}
+                />
+              </div>
+            ) : (
+              /* ── Normal enroll panel ── */
+              <>
+                <div className="text-center mb-6">
+                  <div className="text-xs text-muted-foreground font-mono font-bold uppercase tracking-widest mb-2">Enroll Now</div>
+                  <div className="text-4xl font-serif font-bold text-foreground">{module.price} DZD</div>
+                </div>
+                <button
+                  onClick={handleAddToCart}
+                  disabled={addToCart.isPending || inCart}
+                  className={`w-full font-bold py-4 rounded-xl transition-all shadow-lg mb-4 flex items-center justify-center gap-2 disabled:opacity-75 ${
+                    inCart
+                      ? 'bg-green-600 text-white shadow-green-600/20 cursor-default'
+                      : 'bg-primary hover:bg-primary/90 text-white shadow-primary/20'
+                  }`}
+                >
+                  {inCart ? (
+                    <><Check className="w-5 h-5" /> In Cart</>
+                  ) : addToCart.isPending ? (
+                    'Adding…'
+                  ) : (
+                    <><ShoppingCart className="w-5 h-5" /> Add to Cart</>
+                  )}
+                </button>
+                <p className="text-xs text-muted-foreground text-center font-mono">
+                  Full lifetime access. 14-day money-back guarantee.
+                </p>
+              </>
+            )}
           </div>
         )}
       </div>
@@ -188,11 +220,11 @@ export default function ModuleDetail() {
               <Lock className="w-12 h-12 text-muted-foreground opacity-20 mx-auto mb-4" />
               <h3 className="font-serif text-2xl font-bold text-foreground mb-2">Module Q-bank</h3>
               <p className="text-muted-foreground mb-6 max-w-md mx-auto">Access hundreds of board-style questions specific to this module. Available only to enrolled students.</p>
-              {!isPurchased && (
+              {!isPurchased && !isPending && (
                 <button
                   onClick={handleAddToCart}
                   disabled={addToCart.isPending || inCart}
-                  className={`font-bold px-6 py-3 rounded-xl shadow-lg flex items-center gap-2 disabled:opacity-75 transition-all ${
+                  className={`font-bold px-6 py-3 rounded-xl shadow-lg flex items-center gap-2 mx-auto disabled:opacity-75 transition-all ${
                     inCart
                       ? 'bg-green-600 text-white shadow-green-600/20 cursor-default'
                       : 'bg-primary text-white shadow-primary/20 hover:bg-primary/90'
@@ -200,6 +232,9 @@ export default function ModuleDetail() {
                 >
                   {inCart ? <><Check className="w-4 h-4" /> In Cart</> : 'Enroll to unlock'}
                 </button>
+              )}
+              {isPending && (
+                <p className="text-sm text-amber-700 font-mono font-semibold">⏳ Awaiting admin approval</p>
               )}
             </div>
           )}
