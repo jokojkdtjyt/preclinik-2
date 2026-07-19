@@ -20,4 +20,5 @@ export const pendingPurchasesTable = pgTable("pending_purchases", {
   sessionId: text("session_id").notNull(),
   telegramMessageId: integer("telegram_message_id"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  lastRemindedAt: timestamp("last_reminded_at", { withTimezone: true }),
 });

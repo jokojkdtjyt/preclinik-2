@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import { eq, ilike, and, inArray } from "drizzle-orm";
-import { db, modulesTable, lessonsTable } from "@workspace/db";
+import { db, modulesTable, lessonsTable, notificationsTable } from "@workspace/db";
+import crypto from "node:crypto";
 import {
   ListModulesQueryParams,
   CreateModuleBody,
@@ -76,6 +77,16 @@ router.post("/modules", async (req, res): Promise<void> => {
       outcomes: rest.outcomes ?? [],
     })
     .returning();
+
+  // Global notification — all students see this
+  await db.insert(notificationsTable).values({
+    id: crypto.randomUUID(),
+    userId: null,
+    type: "new_module",
+    title: "New module available 📚",
+    body: `${mod.title} has just been added to the catalog.`,
+    moduleId: mod.id,
+  });
 
   res.status(201).json({ ...mod, lessonCount: 0, liveLessonCount: 0 });
 });

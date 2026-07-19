@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import { eq, and, inArray } from "drizzle-orm";
-import { db, lessonsTable, questionsTable } from "@workspace/db";
+import { db, lessonsTable, questionsTable, notificationsTable, modulesTable } from "@workspace/db";
+import crypto from "node:crypto";
 import {
   ListLessonsParams,
   CreateLessonParams,
@@ -84,6 +85,22 @@ router.post("/modules/:moduleId/lessons", async (req, res): Promise<void> => {
     .insert(lessonsTable)
     .values({ ...parsed.data, moduleId: params.data.moduleId })
     .returning();
+
+  // Look up the parent module title for the notification body
+  const [parentMod] = await db
+    .select({ title: modulesTable.title })
+    .from(modulesTable)
+    .where(eq(modulesTable.id, params.data.moduleId));
+
+  // Global notification — all students see this
+  await db.insert(notificationsTable).values({
+    id: crypto.randomUUID(),
+    userId: null,
+    type: "new_lesson",
+    title: "New lesson added 🎬",
+    body: `"${lesson.title}" is now available${parentMod ? ` in ${parentMod.title}` : ""}.`,
+    moduleId: params.data.moduleId,
+  });
 
   res.status(201).json({ ...lesson, questionCount: 0 });
 });

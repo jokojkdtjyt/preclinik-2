@@ -9,6 +9,7 @@ import adminRouter from "./admin";
 import adminsMgmtRouter from "./admins-mgmt";
 import bunnyRouter from "./bunny";
 import purchasesRouter from "./purchases";
+import notificationsRouter from "./notifications";
 
 const router: IRouter = Router();
 
@@ -22,5 +23,6 @@ router.use(adminRouter);
 router.use(adminsMgmtRouter);
 router.use(bunnyRouter);
 router.use(purchasesRouter);
+router.use(notificationsRouter);
 
 export default router;

@@ -1,14 +1,116 @@
 import React, { useRef, useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
-import { Search, ShoppingCart, LogOut, ChevronDown } from "lucide-react";
+import { Search, ShoppingCart, LogOut, ChevronDown, Bell } from "lucide-react";
 import { useGetCart } from "@workspace/api-client-react";
 import { CartDrawer } from "./CartDrawer";
 import { useUser, useClerk, Show } from "@clerk/react";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
+import { useNotifications } from "@/hooks/useNotifications";
 
 interface TopbarProps {
   role: "student" | "admin";
   setRole: (role: "student" | "admin") => void;
+}
+
+// ── Notification bell + dropdown ──────────────────────────────────────────────
+function NotificationBell() {
+  const { data: notifications = [], markRead } = useNotifications();
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  const unreadCount = notifications.length;
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
+  const handleOpen = () => {
+    setOpen((v) => !v);
+  };
+
+  const handleMarkAll = () => {
+    if (notifications.length === 0) return;
+    void markRead(notifications.map((n) => n.id));
+    setOpen(false);
+  };
+
+  const typeIcon = (type: string) => {
+    if (type === "purchase_approved") return "✅";
+    if (type === "new_module") return "📚";
+    if (type === "new_lesson") return "🎬";
+    return "🔔";
+  };
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={handleOpen}
+        className="relative w-10 h-10 rounded-full border border-border flex items-center justify-center text-foreground hover:bg-secondary transition-colors"
+        aria-label="Notifications"
+      >
+        <Bell className="w-4 h-4" />
+        {unreadCount > 0 && (
+          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center border-2 border-white">
+            {unreadCount > 9 ? "9+" : unreadCount}
+          </span>
+        )}
+      </button>
+
+      {open && (
+        <div className="absolute right-0 top-12 w-80 bg-white rounded-2xl shadow-xl border border-border z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
+          <div className="px-4 py-3 border-b border-border flex items-center justify-between">
+            <p className="font-bold text-sm text-foreground">Notifications</p>
+            {unreadCount > 0 && (
+              <button
+                onClick={handleMarkAll}
+                className="text-xs text-primary hover:underline font-mono"
+              >
+                Mark all read
+              </button>
+            )}
+          </div>
+
+          <div className="max-h-80 overflow-y-auto">
+            {notifications.length === 0 ? (
+              <div className="py-10 text-center text-muted-foreground">
+                <Bell className="w-8 h-8 mx-auto mb-2 opacity-20" />
+                <p className="text-xs font-mono">No new notifications</p>
+              </div>
+            ) : (
+              notifications.map((n) => (
+                <div
+                  key={n.id}
+                  className="px-4 py-3 border-b border-border last:border-0 flex gap-3 items-start hover:bg-secondary/40 transition-colors"
+                >
+                  <span className="text-lg leading-none mt-0.5">{typeIcon(n.type)}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-foreground leading-snug">{n.title}</p>
+                    <p className="text-xs text-muted-foreground font-mono mt-0.5 leading-snug">{n.body}</p>
+                    <p className="text-[10px] text-muted-foreground font-mono mt-1 opacity-60">
+                      {new Date(n.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => void markRead([n.id])}
+                    className="text-[10px] text-muted-foreground hover:text-primary font-mono shrink-0 mt-0.5"
+                    title="Dismiss"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
 // ── Avatar / user dropdown ────────────────────────────────────────────────────
@@ -154,7 +256,7 @@ export function Topbar({ role, setRole }: TopbarProps) {
           </form>
         </div>
 
-        {/* ── Right: nav + role toggle (admins only) + cart + user ── */}
+        {/* ── Right: nav + role toggle (admins only) + bell + cart + user ── */}
         <div className="flex items-center gap-3 h-full">
 
           {/* Nav links — signed-in students and admins */}
@@ -210,6 +312,11 @@ export function Topbar({ role, setRole }: TopbarProps) {
               </button>
             </div>
           )}
+
+          {/* Notification bell — signed-in only */}
+          <Show when="signed-in">
+            <NotificationBell />
+          </Show>
 
           {/* Cart */}
           <Show when="signed-in">
