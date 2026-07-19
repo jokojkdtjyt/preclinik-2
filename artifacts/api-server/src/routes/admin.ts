@@ -38,8 +38,11 @@ router.get("/me/role", async (req, res): Promise<void> => {
 
     res.json({ isAdmin: !!admin });
   } catch (err) {
+    // Return 500 so useIsAdmin() throws and React Query retries,
+    // preserving the old cached { isAdmin: true } value instead of
+    // caching a false-negative { isAdmin: false } as a successful 200.
     console.error("[GET /me/role] error:", err);
-    res.json({ isAdmin: false });
+    res.status(500).json({ error: "Role check failed" });
   }
 });
 

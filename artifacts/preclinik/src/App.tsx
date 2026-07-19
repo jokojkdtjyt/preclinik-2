@@ -261,8 +261,15 @@ function AppRoutes() {
     } else {
       setExtraHeaders({});
     }
-    // Flush cached queries so all data re-fetches under the new context
-    queryClient.invalidateQueries();
+    // Flush cached data queries so they re-fetch under the new context.
+    // Deliberately exclude /api/me/role: including it creates a feedback loop
+    // where invalidating the role query can change isAdmin, which re-runs
+    // this effect, which invalidates again — and any transient DB error in
+    // the catch block would cache { isAdmin: false } as a clean 200 response,
+    // permanently hiding the admin toggle for 5 minutes.
+    queryClient.invalidateQueries({
+      predicate: (query) => query.queryKey[0] !== "/api/me/role",
+    });
   }, [isAdmin, role, queryClient]);
 
   return (

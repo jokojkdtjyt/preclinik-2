@@ -14,6 +14,14 @@ const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 const DEV_DOMAIN = process.env.REPLIT_DEV_DOMAIN;
 
+// ── Startup env-var check ─────────────────────────────────────────────────────
+if (!BOT_TOKEN) {
+  console.warn("[Telegram] TELEGRAM_BOT_TOKEN is not set — Telegram notifications disabled.");
+}
+if (!CHAT_ID) {
+  console.warn("[Telegram] TELEGRAM_CHAT_ID is not set — receipt notifications will be skipped. Set this secret to enable Telegram messages.");
+}
+
 // ── Register Telegram webhook on startup ──────────────────────────────────────
 if (BOT_TOKEN && DEV_DOMAIN) {
   const webhookUrl = `https://${DEV_DOMAIN}/api/purchases/telegram-webhook`;
