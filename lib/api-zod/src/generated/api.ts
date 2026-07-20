@@ -64,7 +64,8 @@ export const CreateModuleBody = zod.object({
   "gradient": zod.string().nullish(),
   "year": zod.string(),
   "summary": zod.string(),
-  "outcomes": zod.array(zod.string()).optional()
+  "outcomes": zod.array(zod.string()).optional(),
+  "isFree": zod.boolean().optional()
 })
 
 export const CreateModuleResponse = zod.object({
@@ -84,7 +85,8 @@ export const CreateModuleResponse = zod.object({
   "summary": zod.string(),
   "outcomes": zod.array(zod.string()),
   "lessonCount": zod.number(),
-  "liveLessonCount": zod.number()
+  "liveLessonCount": zod.number(),
+  "isFree": zod.boolean()
 })
 
 
@@ -112,7 +114,8 @@ export const GetModuleResponse = zod.object({
   "summary": zod.string(),
   "outcomes": zod.array(zod.string()),
   "lessonCount": zod.number(),
-  "liveLessonCount": zod.number()
+  "liveLessonCount": zod.number(),
+  "isFree": zod.boolean()
 })
 
 
@@ -137,7 +140,8 @@ export const UpdateModuleBody = zod.object({
   "gradient": zod.string().nullish(),
   "year": zod.string().optional(),
   "summary": zod.string().optional(),
-  "outcomes": zod.array(zod.string()).optional()
+  "outcomes": zod.array(zod.string()).optional(),
+  "isFree": zod.boolean().optional()
 })
 
 export const UpdateModuleResponse = zod.object({
@@ -157,7 +161,8 @@ export const UpdateModuleResponse = zod.object({
   "summary": zod.string(),
   "outcomes": zod.array(zod.string()),
   "lessonCount": zod.number(),
-  "liveLessonCount": zod.number()
+  "liveLessonCount": zod.number(),
+  "isFree": zod.boolean()
 })
 
 
@@ -190,6 +195,8 @@ export const ListLessonsResponseItem = zod.object({
   "videoUrl": zod.string().nullish(),
   "sortOrder": zod.number(),
   "bunnyVideoId": zod.string().nullish().describe('Bunny Stream video ID for this lesson'),
+  "youtubeUrl": zod.string().nullish(),
+  "isFree": zod.boolean().optional(),
   "questionCount": zod.number().optional()
 })
 export const ListLessonsResponse = zod.array(ListLessonsResponseItem)
@@ -211,6 +218,8 @@ export const CreateLessonBody = zod.object({
   "summary": zod.string().nullish(),
   "videoTitle": zod.string().nullish(),
   "videoUrl": zod.string().nullish(),
+  "youtubeUrl": zod.string().nullish(),
+  "isFree": zod.boolean().optional(),
   "sortOrder": zod.number().optional()
 })
 
@@ -226,6 +235,8 @@ export const CreateLessonResponse = zod.object({
   "videoUrl": zod.string().nullish(),
   "sortOrder": zod.number(),
   "bunnyVideoId": zod.string().nullish().describe('Bunny Stream video ID for this lesson'),
+  "youtubeUrl": zod.string().nullish(),
+  "isFree": zod.boolean().optional(),
   "questionCount": zod.number().optional()
 })
 
@@ -250,6 +261,8 @@ export const GetLessonResponse = zod.object({
   "videoUrl": zod.string().nullish(),
   "sortOrder": zod.number(),
   "bunnyVideoId": zod.string().nullish().describe('Bunny Stream video ID for this lesson'),
+  "youtubeUrl": zod.string().nullish(),
+  "isFree": zod.boolean().optional(),
   "questionCount": zod.number().optional()
 })
 
@@ -270,6 +283,8 @@ export const UpdateLessonBody = zod.object({
   "summary": zod.string().nullish(),
   "videoTitle": zod.string().nullish(),
   "videoUrl": zod.string().nullish(),
+  "youtubeUrl": zod.string().nullish(),
+  "isFree": zod.boolean().optional(),
   "sortOrder": zod.number().optional()
 })
 
@@ -285,6 +300,8 @@ export const UpdateLessonResponse = zod.object({
   "videoUrl": zod.string().nullish(),
   "sortOrder": zod.number(),
   "bunnyVideoId": zod.string().nullish().describe('Bunny Stream video ID for this lesson'),
+  "youtubeUrl": zod.string().nullish(),
+  "isFree": zod.boolean().optional(),
   "questionCount": zod.number().optional()
 })
 

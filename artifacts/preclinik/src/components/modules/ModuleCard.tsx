@@ -9,11 +9,14 @@ import {
   useGetCart,
   getGetCartQueryKey,
   useListPurchased,
+  getListPurchasedQueryKey,
 } from '@workspace/api-client-react';
 import { useQueryClient } from '@tanstack/react-query';
-import { ShoppingCart, Check, PlayCircle } from 'lucide-react';
+import { useAuth } from '@clerk/react';
+import { ShoppingCart, Check, PlayCircle, Zap } from 'lucide-react';
 import { usePendingModules } from '@/hooks/usePendingModules';
 import { NotifyAgain } from './NotifyAgain';
+import { getExtraHeaders } from '@workspace/api-client-react';
 
 interface ModuleCardProps {
   module: Module;
@@ -47,6 +50,30 @@ export function ModuleCard({ module, variant = 'store' }: ModuleCardProps) {
 
   const addToCart = useAddToCart();
   const removeFromCart = useRemoveFromCart();
+  const { getToken } = useAuth();
+
+  // Free module — not purchased, not pending, not in library
+  const isFree = !isPurchased && !isLibrary && !isPending && !!module.isFree;
+
+  const handleFreeEnroll = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      const token = await getToken();
+      const res = await fetch(`/api/modules/${module.id}/enroll-free`, {
+        method: 'POST',
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          ...getExtraHeaders(),
+        },
+      });
+      if (!res.ok) throw new Error(await res.text());
+      queryClient.invalidateQueries({ queryKey: getListPurchasedQueryKey() });
+      toast.success(`${module.title} unlocked — start learning!`);
+      setLocation(`/modules/${module.id}`);
+    } catch {
+      toast.error('Could not unlock module. Please try again.');
+    }
+  };
 
   const handleCardClick = () => setLocation(`/modules/${module.id}`);
   const handleViewModule = (e: React.MouseEvent) => {
@@ -126,6 +153,12 @@ export function ModuleCard({ module, variant = 'store' }: ModuleCardProps) {
               ⏳ Pending Review
             </span>
           )}
+          {/* Free badge */}
+          {isFree && (
+            <span className="px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-[10px] font-bold uppercase tracking-wider font-mono border border-green-200">
+              🎁 Free
+            </span>
+          )}
         </div>
 
         <h3 className="text-lg font-bold text-foreground mb-2 line-clamp-2 brand">{module.title}</h3>
@@ -157,12 +190,13 @@ export function ModuleCard({ module, variant = 'store' }: ModuleCardProps) {
               OWNED
             </span>
           ) : isPending ? (
-            // Pending: show Notify Again in the left slot (price is hidden while under review)
             <NotifyAgain
               sessionId={pendingSession!.sessionId}
               lastRemindedAt={pendingSession!.lastRemindedAt}
               createdAt={pendingSession!.createdAt}
             />
+          ) : isFree ? (
+            <span className="text-green-700 font-bold font-mono text-sm">FREE</span>
           ) : (
             <span className="text-foreground font-bold font-mono">
               {module.price} DZD
@@ -171,30 +205,42 @@ export function ModuleCard({ module, variant = 'store' }: ModuleCardProps) {
 
           {/* Right slot */}
           <div className="flex items-center gap-2">
-            {/* Cart toggle — store mode, not yet owned, not pending */}
-            {!isLibrary && !isPurchased && !isPending && (
+            {/* Free enroll button — replaces cart */}
+            {isFree ? (
               <button
-                onClick={handleCartToggle}
-                disabled={addToCart.isPending || removeFromCart.isPending}
-                className={`w-8 h-8 rounded-full border flex items-center justify-center transition-colors disabled:opacity-60 ${
-                  inCart
-                    ? 'bg-primary text-white border-primary'
-                    : 'bg-white text-muted-foreground border-border hover:border-primary hover:text-primary'
-                }`}
-                data-testid={`btn-cart-${module.id}`}
+                onClick={handleFreeEnroll}
+                className="flex items-center gap-1.5 bg-green-600 hover:bg-green-700 text-white text-sm font-bold px-4 py-1.5 rounded-[10px] transition-colors whitespace-nowrap shadow-sm"
+                data-testid={`btn-free-${module.id}`}
               >
-                {inCart ? <Check className="w-4 h-4" /> : <ShoppingCart className="w-4 h-4" />}
+                <Zap className="w-3.5 h-3.5" /> Start Learning
               </button>
+            ) : (
+              <>
+                {/* Cart toggle — store mode, not yet owned, not pending */}
+                {!isLibrary && !isPurchased && !isPending && (
+                  <button
+                    onClick={handleCartToggle}
+                    disabled={addToCart.isPending || removeFromCart.isPending}
+                    className={`w-8 h-8 rounded-full border flex items-center justify-center transition-colors disabled:opacity-60 ${
+                      inCart
+                        ? 'bg-primary text-white border-primary'
+                        : 'bg-white text-muted-foreground border-border hover:border-primary hover:text-primary'
+                    }`}
+                    data-testid={`btn-cart-${module.id}`}
+                  >
+                    {inCart ? <Check className="w-4 h-4" /> : <ShoppingCart className="w-4 h-4" />}
+                  </button>
+                )}
+                {/* View / Continue Learning */}
+                <button
+                  onClick={handleViewModule}
+                  className="bg-secondary hover:bg-secondary/80 text-foreground text-sm font-semibold px-4 py-1.5 rounded-[10px] transition-colors whitespace-nowrap"
+                  data-testid={`btn-view-${module.id}`}
+                >
+                  {viewLabel}
+                </button>
+              </>
             )}
-
-            {/* View / Continue Learning */}
-            <button
-              onClick={handleViewModule}
-              className="bg-secondary hover:bg-secondary/80 text-foreground text-sm font-semibold px-4 py-1.5 rounded-[10px] transition-colors whitespace-nowrap"
-              data-testid={`btn-view-${module.id}`}
-            >
-              {viewLabel}
-            </button>
           </div>
         </div>
       </div>

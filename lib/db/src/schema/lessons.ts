@@ -13,6 +13,8 @@ export const lessonsTable = pgTable("lessons", {
   videoTitle: text("video_title"),
   videoUrl: text("video_url"),
   bunnyVideoId: text("bunny_video_id"),
+  youtubeUrl: text("youtube_url"),
+  isFree: boolean("is_free").notNull().default(false),
   sortOrder: integer("sort_order").notNull().default(0),
 });
 

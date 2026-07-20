@@ -18,6 +18,7 @@ const schema = z.object({
   icon: z.string().min(1, 'Icon is required'),
   status: z.enum(['Live', 'Draft']),
   price: z.coerce.number().min(0),
+  isFree: z.boolean().optional(),
   rating: z.coerce.number().min(0).max(5),
   students: z.coerce.number().min(0),
   summary: z.string().min(1, 'Summary is required'),
@@ -50,6 +51,7 @@ export function ModuleEditor({ module, onClose, onCreated }: ModuleEditorProps) 
       icon: module?.icon || 'heart',
       status: module?.published ? 'Live' : 'Draft',
       price: module?.price || 800,
+      isFree: module?.isFree ?? false,
       rating: module?.rating || 4.5,
       students: module?.students || 0,
       summary: module?.summary || '',
@@ -73,6 +75,7 @@ export function ModuleEditor({ module, onClose, onCreated }: ModuleEditorProps) 
       icon: data.icon,
       published: data.status === 'Live',
       price: data.price,
+      isFree: data.isFree,
       rating: data.rating,
       students: data.students,
       summary: data.summary,
@@ -175,6 +178,21 @@ export function ModuleEditor({ module, onClose, onCreated }: ModuleEditorProps) 
                 <label className="text-sm font-bold text-muted-foreground font-mono uppercase tracking-widest">Price (DZD)</label>
                 <input type="number" {...form.register('price')} className="w-full h-12 px-4 rounded-xl border border-border bg-background focus:bg-white focus:ring-2 focus:ring-primary outline-none transition-all" />
               </div>
+            </div>
+
+            <div className="flex items-center gap-3 p-4 rounded-xl border border-border bg-secondary/30">
+              <input
+                type="checkbox"
+                id="isFree"
+                {...form.register('isFree')}
+                className="w-4 h-4 accent-green-600 rounded"
+              />
+              <label htmlFor="isFree" className="flex-1 cursor-pointer">
+                <div className="text-sm font-bold text-foreground">🎁 Free Access</div>
+                <div className="text-xs text-muted-foreground font-mono mt-0.5">
+                  Students can enroll instantly with no payment — the price field is ignored.
+                </div>
+              </label>
             </div>
 
             <div className="space-y-2">

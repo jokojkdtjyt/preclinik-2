@@ -18,5 +18,8 @@ export interface LessonUpdate {
   videoTitle?: string | null;
   /** @nullable */
   videoUrl?: string | null;
+  /** @nullable */
+  youtubeUrl?: string | null;
+  isFree?: boolean;
   sortOrder?: number;
 }

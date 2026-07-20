@@ -1,9 +1,10 @@
 import React, { useState, useMemo } from 'react';
 import { useParams, Link } from 'wouter';
-import { useGetModule, useListLessons, useListPurchased, useAddToCart, useGetCart, getGetCartQueryKey } from '@workspace/api-client-react';
+import { useGetModule, useListLessons, useListPurchased, useAddToCart, useGetCart, getGetCartQueryKey, getListPurchasedQueryKey, getExtraHeaders } from '@workspace/api-client-react';
 import { useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '@clerk/react';
 import { toast } from 'sonner';
-import { PlayCircle, CheckCircle, Lock, BookOpen, Clock, Users, Star, ShoppingCart, Check } from 'lucide-react';
+import { PlayCircle, CheckCircle, Lock, BookOpen, Clock, Users, Star, ShoppingCart, Check, Zap } from 'lucide-react';
 import { usePendingModules } from '@/hooks/usePendingModules';
 import { NotifyAgain } from '@/components/modules/NotifyAgain';
 
@@ -12,6 +13,7 @@ export default function ModuleDetail() {
   const [activeTab, setActiveTab] = useState<'Videos' | 'Description' | 'Q-bank'>('Videos');
   
   const queryClient = useQueryClient();
+  const { getToken } = useAuth();
   const { data: module, isLoading: moduleLoading } = useGetModule(id, { query: { enabled: !!id } });
   const { data: lessons } = useListLessons(id, { query: { enabled: !!id } });
   const { data: purchasedList } = useListPurchased();
@@ -27,6 +29,24 @@ export default function ModuleDetail() {
     [pendingSessions, id],
   );
   const isPending = !isPurchased && pendingSession !== null;
+
+  const handleFreeEnroll = async () => {
+    try {
+      const token = await getToken();
+      const res = await fetch(`/api/modules/${module!.id}/enroll-free`, {
+        method: 'POST',
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          ...getExtraHeaders(),
+        },
+      });
+      if (!res.ok) throw new Error(await res.text());
+      queryClient.invalidateQueries({ queryKey: getListPurchasedQueryKey() });
+      toast.success('Access granted — enjoy the module!');
+    } catch {
+      toast.error('Could not unlock module. Please try again.');
+    }
+  };
 
   const handleAddToCart = () => {
     addToCart.mutate(
@@ -97,6 +117,25 @@ export default function ModuleDetail() {
                   createdAt={pendingSession!.createdAt}
                   variant="full"
                 />
+              </div>
+            ) : module.isFree ? (
+              /* ── Free module state ── */
+              <div className="flex flex-col items-center text-center gap-4">
+                <div className="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center">
+                  <Zap className="w-7 h-7 text-green-600" />
+                </div>
+                <div>
+                  <div className="text-xs text-green-700 font-mono font-bold uppercase tracking-widest mb-1">Free Access</div>
+                  <p className="text-xs text-muted-foreground font-mono leading-relaxed">
+                    This module is completely free. Start watching immediately — no payment required.
+                  </p>
+                </div>
+                <button
+                  onClick={handleFreeEnroll}
+                  className="w-full font-bold py-4 rounded-xl bg-green-600 hover:bg-green-700 text-white shadow-lg shadow-green-600/20 transition-all flex items-center justify-center gap-2"
+                >
+                  <Zap className="w-5 h-5" /> Start Learning
+                </button>
               </div>
             ) : (
               /* ── Normal enroll panel ── */
@@ -193,12 +232,16 @@ export default function ModuleDetail() {
                     </div>
                     
                     <div>
-                      {isPurchased ? (
+                      {isPurchased || lesson.isFree ? (
                         <Link 
                           href={`/modules/${module.id}/lessons/${lesson.id}`}
-                          className="bg-primary/10 hover:bg-primary text-primary hover:text-white px-5 py-2 rounded-xl font-bold text-sm transition-all inline-block"
+                          className={`px-5 py-2 rounded-xl font-bold text-sm transition-all inline-block ${
+                            lesson.isFree && !isPurchased
+                              ? 'bg-green-100 hover:bg-green-600 text-green-700 hover:text-white'
+                              : 'bg-primary/10 hover:bg-primary text-primary hover:text-white'
+                          }`}
                         >
-                          Watch
+                          {lesson.isFree && !isPurchased ? '🎁 Preview' : 'Watch'}
                         </Link>
                       ) : (
                         <div className="flex items-center justify-center w-10 h-10 rounded-full bg-secondary text-muted-foreground">

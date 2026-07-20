@@ -168,8 +168,9 @@ router.get(
       return;
     }
 
-    // Ownership: admins pass unconditionally; students need a purchase record
-    let hasAccess = adminAccess;
+    // Ownership: admins and free lessons pass unconditionally;
+    // students need a purchase record for paid lessons.
+    let hasAccess = adminAccess || lesson.isFree;
     if (!hasAccess) {
       const [purchase] = await db
         .select()

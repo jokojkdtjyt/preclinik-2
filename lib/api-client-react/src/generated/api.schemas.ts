@@ -27,6 +27,7 @@ export interface Module {
   outcomes: string[];
   lessonCount: number;
   liveLessonCount: number;
+  isFree: boolean;
 }
 
 export interface ModuleInput {
@@ -46,6 +47,7 @@ export interface ModuleInput {
   year: string;
   summary: string;
   outcomes?: string[];
+  isFree?: boolean;
 }
 
 export interface ModuleUpdate {
@@ -64,6 +66,7 @@ export interface ModuleUpdate {
   year?: string;
   summary?: string;
   outcomes?: string[];
+  isFree?: boolean;
 }
 
 export type LessonType = typeof LessonType[keyof typeof LessonType];
@@ -94,6 +97,9 @@ export interface Lesson {
      * @nullable
      */
   bunnyVideoId?: string | null;
+  /** @nullable */
+  youtubeUrl?: string | null;
+  isFree?: boolean;
   questionCount?: number;
 }
 
@@ -118,6 +124,9 @@ export interface LessonInput {
   videoTitle?: string | null;
   /** @nullable */
   videoUrl?: string | null;
+  /** @nullable */
+  youtubeUrl?: string | null;
+  isFree?: boolean;
   sortOrder?: number;
 }
 
@@ -141,6 +150,9 @@ export interface LessonUpdate {
   videoTitle?: string | null;
   /** @nullable */
   videoUrl?: string | null;
+  /** @nullable */
+  youtubeUrl?: string | null;
+  isFree?: boolean;
   sortOrder?: number;
 }
 

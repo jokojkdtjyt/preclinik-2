@@ -42,6 +42,40 @@ function BunnyPlayer({ embedUrl }: { embedUrl: string }) {
   );
 }
 
+/** Convert any YouTube share/watch URL to an embed URL. Returns null if invalid. */
+function toYoutubeEmbedUrl(url: string): string | null {
+  try {
+    const u = new URL(url);
+    let videoId: string | null = null;
+    if (u.hostname === 'youtu.be') {
+      videoId = u.pathname.slice(1).split('?')[0];
+    } else if (u.hostname.includes('youtube.com')) {
+      if (u.pathname.startsWith('/embed/')) {
+        videoId = u.pathname.replace('/embed/', '').split('?')[0];
+      } else {
+        videoId = u.searchParams.get('v');
+      }
+    }
+    return videoId ? `https://www.youtube.com/embed/${videoId}?rel=0` : null;
+  } catch {
+    return null;
+  }
+}
+
+/** YouTube embedded player iframe. */
+function YouTubePlayer({ embedUrl }: { embedUrl: string }) {
+  return (
+    <iframe
+      src={embedUrl}
+      className="w-full h-full absolute inset-0"
+      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+      allowFullScreen
+      style={{ border: 'none' }}
+      title="Lesson video"
+    />
+  );
+}
+
 export default function LessonPlayer() {
   const { moduleId, lessonId } = useParams<{ moduleId: string, lessonId: string }>();
   const { isSignedIn } = useAuth();
@@ -52,11 +86,15 @@ export default function LessonPlayer() {
   const { data: lesson, isLoading } = useGetLesson(moduleId, lessonId, { query: { enabled: !!moduleId && !!lessonId } });
   const { data: lessons } = useListLessons(moduleId, { query: { enabled: !!moduleId } });
 
-  const hasVideo = !!lesson?.bunnyVideoId;
+  const hasYoutube = !!(lesson as any)?.youtubeUrl;
+  const hasBunny = !!(lesson as any)?.bunnyVideoId;
+  const hasVideo = hasBunny || hasYoutube;
+
+  // Only fetch the Bunny signed URL when there's actually a Bunny video (not YouTube)
   const { data: playData, isLoading: playLoading, error: playError } = useLessonPlayUrl(
     moduleId,
     lessonId,
-    !!moduleId && !!lessonId && !!isSignedIn && hasVideo,
+    !!moduleId && !!lessonId && !!isSignedIn && hasBunny,
   );
 
   if (isLoading || !lesson || !module) {
@@ -68,7 +106,28 @@ export default function LessonPlayer() {
   // ── Video area ──
   let videoArea: React.ReactNode;
 
-  if (!hasVideo) {
+  if (hasYoutube) {
+    // YouTube embed — no signed URL needed
+    const youtubeUrl = (lesson as any).youtubeUrl as string;
+    const embedUrl = toYoutubeEmbedUrl(youtubeUrl);
+    if (embedUrl) {
+      videoArea = (
+        <div className="w-full aspect-video rounded-[22px] overflow-hidden relative shadow-2xl border border-[#3a3330]">
+          <YouTubePlayer embedUrl={embedUrl} />
+        </div>
+      );
+    } else {
+      videoArea = (
+        <div className="w-full aspect-video bg-gradient-to-br from-[#241e1b] to-[#120f0e] rounded-[22px] overflow-hidden relative shadow-2xl border border-[#3a3330] flex flex-col items-center justify-center text-center p-8">
+          <PlayCircle className="w-20 h-20 text-white/20 mb-4" />
+          <h3 className="text-white font-serif text-xl font-bold mb-2">{lesson.videoTitle || lesson.title}</h3>
+          <span className="bg-white/10 backdrop-blur-md px-4 py-1.5 rounded-full text-white/50 text-xs font-mono border border-white/10">
+            Invalid YouTube URL
+          </span>
+        </div>
+      );
+    }
+  } else if (!hasBunny) {
     // No video uploaded yet
     videoArea = (
       <div className="w-full aspect-video bg-gradient-to-br from-[#241e1b] to-[#120f0e] rounded-[22px] overflow-hidden relative shadow-2xl border border-[#3a3330] flex flex-col items-center justify-center text-center p-8">
@@ -103,7 +162,7 @@ export default function LessonPlayer() {
       </div>
     );
   } else {
-    // Have a valid signed embed URL
+    // Have a valid Bunny signed embed URL
     videoArea = (
       <div className="w-full aspect-video rounded-[22px] overflow-hidden relative shadow-2xl border border-[#3a3330]">
         <BunnyPlayer embedUrl={playData.embedUrl} />
@@ -194,7 +253,9 @@ export default function LessonPlayer() {
                       <div className={`font-bold text-sm ${isActive ? 'text-primary' : 'text-foreground'}`}>{l.title}</div>
                       <div className="text-xs text-muted-foreground font-mono mt-1 flex items-center gap-2">
                         {l.duration}
-                        {l.bunnyVideoId && <span className="text-green-600">● Video ready</span>}
+                        {(l as any).bunnyVideoId && <span className="text-green-600">● Video ready</span>}
+                        {(l as any).youtubeUrl && <span className="text-red-500">● YouTube</span>}
+                        {(l as any).isFree && <span className="text-green-700 font-bold">🎁 Free</span>}
                       </div>
                     </div>
                   </Link>

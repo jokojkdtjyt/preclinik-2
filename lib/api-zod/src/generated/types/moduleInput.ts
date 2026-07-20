@@ -23,4 +23,5 @@ export interface ModuleInput {
   year: string;
   summary: string;
   outcomes?: string[];
+  isFree?: boolean;
 }

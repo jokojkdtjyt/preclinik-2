@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { eq, ilike, and, inArray } from "drizzle-orm";
-import { db, modulesTable, lessonsTable, notificationsTable } from "@workspace/db";
+import { db, modulesTable, lessonsTable, notificationsTable, purchasedTable } from "@workspace/db";
 import crypto from "node:crypto";
 import {
   ListModulesQueryParams,
@@ -11,6 +11,7 @@ import {
   DeleteModuleParams,
 } from "@workspace/api-zod";
 import { sql } from "drizzle-orm";
+import { requireAuth, type AuthedRequest } from "../middlewares/requireAuth";
 
 const router: IRouter = Router();
 
@@ -154,6 +155,31 @@ router.patch("/modules/:moduleId", async (req, res): Promise<void> => {
 
   const counts = lessonRows[0] ?? { total: 0, live: 0 };
   res.json({ ...mod, lessonCount: Number(counts.total), liveLessonCount: Number(counts.live) });
+});
+
+// ── POST /modules/:moduleId/enroll-free ───────────────────────────────────────
+// Instantly grants access to a free module for any signed-in student.
+router.post("/modules/:moduleId/enroll-free", requireAuth, async (req, res): Promise<void> => {
+  const userId = (req as AuthedRequest).userId;
+  const moduleId = req.params.moduleId as string;
+
+  const [mod] = await db.select().from(modulesTable).where(eq(modulesTable.id, moduleId));
+  if (!mod) {
+    res.status(404).json({ error: "Module not found" });
+    return;
+  }
+  if (!mod.isFree) {
+    res.status(403).json({ error: "This module is not free" });
+    return;
+  }
+
+  // Upsert — idempotent if already enrolled
+  await db
+    .insert(purchasedTable)
+    .values({ userId, moduleId })
+    .onConflictDoNothing();
+
+  res.json({ success: true, moduleId });
 });
 
 router.delete("/modules/:moduleId", async (req, res): Promise<void> => {

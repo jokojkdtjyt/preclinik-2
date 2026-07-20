@@ -26,5 +26,8 @@ export interface Lesson {
      * @nullable
      */
   bunnyVideoId?: string | null;
+  /** @nullable */
+  youtubeUrl?: string | null;
+  isFree?: boolean;
   questionCount?: number;
 }

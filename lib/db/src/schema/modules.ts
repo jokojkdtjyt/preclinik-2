@@ -18,6 +18,7 @@ export const modulesTable = pgTable("modules", {
   year: text("year").notNull().default("1"),
   summary: text("summary").notNull().default(""),
   outcomes: jsonb("outcomes").$type<string[]>().notNull().default([]),
+  isFree: boolean("is_free").notNull().default(false),
 });
 
 export const insertModuleSchema = createInsertSchema(modulesTable);

@@ -24,4 +24,5 @@ export interface Module {
   outcomes: string[];
   lessonCount: number;
   liveLessonCount: number;
+  isFree: boolean;
 }

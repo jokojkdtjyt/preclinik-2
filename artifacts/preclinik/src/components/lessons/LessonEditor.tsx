@@ -64,6 +64,8 @@ interface VideoFormData {
   published: boolean;
   videoTitle: string;
   videoUrl: string;
+  youtubeUrl: string;
+  isFree: boolean;
   summary: string;
 }
 
@@ -381,6 +383,11 @@ export function LessonEditor({ moduleId, lesson, onClose }: LessonEditorProps) {
   const [qbank, setQbank] = useState<LocalQuestion[]>([]);
   const [saving, setSaving] = useState(false);
 
+  // Video source toggle: 'bunny' | 'youtube'
+  const [videoSource, setVideoSource] = useState<'bunny' | 'youtube'>(
+    (lesson as any)?.youtubeUrl ? 'youtube' : 'bunny'
+  );
+
   // Bunny video state
   const [stagedVideoFile, setStagedVideoFile] = useState<File | null>(null);
   const [savedLessonId, setSavedLessonId] = useState<string | null>(lesson?.id ?? null);
@@ -402,6 +409,8 @@ export function LessonEditor({ moduleId, lesson, onClose }: LessonEditorProps) {
       published: lesson?.published ?? false,
       videoTitle: lesson?.videoTitle || '',
       videoUrl: lesson?.videoUrl || '',
+      youtubeUrl: (lesson as any)?.youtubeUrl || '',
+      isFree: (lesson as any)?.isFree ?? false,
       summary: lesson?.summary || '',
     },
   });
@@ -470,6 +479,8 @@ export function LessonEditor({ moduleId, lesson, onClose }: LessonEditorProps) {
         summary: formData.summary,
         videoTitle: formData.videoTitle || formData.title,
         videoUrl: formData.videoUrl,
+        youtubeUrl: videoSource === 'youtube' ? (formData.youtubeUrl || null) : null,
+        isFree: formData.isFree,
         sortOrder: lesson?.sortOrder ?? 99,
       };
 
@@ -650,19 +661,74 @@ export function LessonEditor({ moduleId, lesson, onClose }: LessonEditorProps) {
                   />
                 </div>
 
-                {/* 6. Upload video to Bunny Stream */}
-                <div className="space-y-1.5">
+                {/* 6. Video source toggle + upload/URL */}
+                <div className="space-y-3">
                   <label className="text-xs font-mono font-bold uppercase tracking-widest text-muted-foreground">
-                    Video file — Bunny Stream
+                    Video source
                   </label>
-                  <BunnyUploader
-                    lessonId={savedLessonId}
-                    moduleId={moduleId}
-                    lessonTitle={watchedTitle || lesson?.title || 'Lesson'}
-                    existingBunnyVideoId={bunnyVideoId}
-                    onFileStaged={(f) => setStagedVideoFile(f)}
-                    getToken={getToken}
+                  {/* Segmented toggle */}
+                  <div className="flex gap-1 p-1 bg-secondary rounded-xl w-fit">
+                    <button
+                      type="button"
+                      onClick={() => setVideoSource('bunny')}
+                      className={`flex items-center gap-1.5 px-4 py-2 rounded-[10px] text-sm font-bold transition-all ${
+                        videoSource === 'bunny'
+                          ? 'bg-white text-foreground shadow-sm border border-border'
+                          : 'text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
+                      <CloudUpload className="w-4 h-4" /> Bunny Upload
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setVideoSource('youtube')}
+                      className={`flex items-center gap-1.5 px-4 py-2 rounded-[10px] text-sm font-bold transition-all ${
+                        videoSource === 'youtube'
+                          ? 'bg-white text-foreground shadow-sm border border-border'
+                          : 'text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
+                      <Video className="w-4 h-4" /> YouTube Embed
+                    </button>
+                  </div>
+
+                  {videoSource === 'bunny' ? (
+                    <BunnyUploader
+                      lessonId={savedLessonId}
+                      moduleId={moduleId}
+                      lessonTitle={watchedTitle || lesson?.title || 'Lesson'}
+                      existingBunnyVideoId={bunnyVideoId}
+                      onFileStaged={(f) => setStagedVideoFile(f)}
+                      getToken={getToken}
+                    />
+                  ) : (
+                    <div className="space-y-1.5">
+                      <input
+                        {...register('youtubeUrl')}
+                        placeholder="https://www.youtube.com/watch?v=... or https://youtu.be/..."
+                        className="w-full h-12 px-4 rounded-xl border border-border bg-white focus:ring-2 focus:ring-primary outline-none transition-all text-sm font-mono"
+                      />
+                      <p className="text-xs text-muted-foreground font-mono">
+                        Paste any YouTube share link. The video will be embedded directly in the lesson player.
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* 6b. Free preview toggle */}
+                <div className="flex items-center gap-3 p-4 rounded-xl border border-border bg-secondary/30">
+                  <input
+                    type="checkbox"
+                    id="lessonIsFree"
+                    {...register('isFree')}
+                    className="w-4 h-4 accent-green-600 rounded"
                   />
+                  <label htmlFor="lessonIsFree" className="flex-1 cursor-pointer">
+                    <div className="text-sm font-bold text-foreground">🎁 Free Preview</div>
+                    <div className="text-xs text-muted-foreground font-mono mt-0.5">
+                      Students can watch this lesson without purchasing the module — great for sample content.
+                    </div>
+                  </label>
                 </div>
 
                 {/* 7. Lesson description */}

@@ -22,4 +22,5 @@ export interface ModuleUpdate {
   year?: string;
   summary?: string;
   outcomes?: string[];
+  isFree?: boolean;
 }
