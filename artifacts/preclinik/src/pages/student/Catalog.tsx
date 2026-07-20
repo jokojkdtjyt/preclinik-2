@@ -1,15 +1,22 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useListModules } from '@workspace/api-client-react';
 import { ModuleCard } from '@/components/modules/ModuleCard';
-import { useLocation } from 'wouter';
 import { Search } from 'lucide-react';
 
 export default function Catalog() {
-  const [location] = useLocation();
   const searchParams = new URLSearchParams(window.location.search);
-  const searchQ = searchParams.get('search') || undefined;
+  const [search, setSearch] = useState(searchParams.get('search') || '');
 
-  const { data: modules, isLoading } = useListModules({ published: true, search: searchQ });
+  const { data: modules, isLoading } = useListModules({
+    published: true,
+    search: search || undefined,
+  });
+
+  function handleSearch(val: string) {
+    setSearch(val);
+    const newUrl = val ? `/catalog?search=${encodeURIComponent(val)}` : '/catalog';
+    window.history.replaceState(null, '', newUrl);
+  }
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500 pb-16">
@@ -18,21 +25,14 @@ export default function Catalog() {
           <h1 className="text-4xl font-serif font-bold text-foreground mb-2">Module Catalog</h1>
           <p className="text-muted-foreground text-lg">Browse comprehensive resources for medical fundamentals.</p>
         </div>
-        
+
         <div className="relative w-full md:w-80">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-          <input 
+          <input
             type="text"
             placeholder="Filter modules..."
-            defaultValue={searchQ}
-            onChange={(e) => {
-              const val = e.target.value;
-              const newUrl = val ? `/catalog?search=${encodeURIComponent(val)}` : '/catalog';
-              window.history.replaceState(null, '', newUrl);
-              // We'd ideally trigger a re-render here, but react-query will handle refetch if we wire it via state.
-              // For simplicity, we can rely on wouter location or just internal state if needed.
-              // In this setup, we'll let the user hit enter or just leave it for now.
-            }}
+            value={search}
+            onChange={(e) => handleSearch(e.target.value)}
             className="w-full h-12 bg-white border border-border hover:border-primary/50 focus:border-primary focus:ring-2 focus:ring-primary/20 rounded-xl pl-12 pr-4 outline-none transition-all font-mono shadow-sm"
           />
         </div>
